@@ -1,7 +1,7 @@
 #include <stdio.h>
 #include <stdlib.h>
 #include <allegro.h>
-#include <cstdlib>
+#include <cstdlib>//para utilizar la funcion rand
 
 //matriz pantalla se deja 1 de mas
 #define MAXFILAS 20//eje y
@@ -13,21 +13,26 @@ BITMAP *pacbmp;//imagen general del bmp de pacman
 BITMAP *pacman;//imagen de un unico pacman
 BITMAP *comida;//imagen de comida
 BITMAP *enemigobmp;//imagen de enemigo
-BITMAP *enemigo;;//imagen de enemigo
+BITMAP *enemigo;//imagen de enemigo en el buffer
+BITMAP *muertebmp;//imagen de pacMan al morir
 
 //direccion de pacman
+//RECORDAR SIEMPRE QUE LA ESCALA GLOBAL ESTA EN RELACION A LA DIMENSION DE LOS BMP
+
+
+//ZONA DE VARIABLES GLOBALES
 int dir = 4;
-int posx = 30*14, posy = 30*17;//posicion de pacman
-int fdir = 0;
-int _x = 30*14 , _y = 30*15;
+int posx = 30*14, posy = 30*16;//posicion de pacman
+int fdir = 0; //direccion de los fantasmas
+int _x = 30*14 , _y = 30*15; //posicion de los fantasmas
+int anteriorposx, anteriorposy;
 
-
-char mapa[MAXFILAS][MAXCOLS] = {
+char mapa[MAXFILAS][MAXCOLS] = { //fread,fopen, fwrite, fclose.
 
 	"XXXXXXXXXXXXXXXXXXXXXXXXXXXXX",
-	"X    | o o  XXXXX  o o |    X",	
-	"X XXX XXXXX XXXXX XXXXX XXX X",
-	"X XXX XXXXX XXXXX XXXXX XXX X",
+	"Xoooo|ooooo XXXXX ooooo|ooooX",	
+	"XoXXXoXXXXXoXXXXXoXXXXXoXXXoX",
+	"XoXXXoXXXXXoXXXXXoXXXXXoXXXoX",
 	"X       |           |       X",
 	"X XXX XX XXXXXXXXXXX XX XXX X",
 	"X    |XX     XXX     XX|    X",
@@ -100,13 +105,38 @@ void dibujar_fantasma(){
 	draw_sprite(buffer, enemigo, _x, _y);
 }
 
-void fantasma(){
-	dibujar_fantasma();
+void muerte_pacman(){
+	if(posy == _y && posx == _x || _y == anteriorposy && _x == anteriorposx){ //condicion para saber cuando se muere
 	
-	if(mapa[_y/30][(_x)/30] == '|'){
+		for(int j=0; j<=5 ; j++){ //un for que recorre las imagenes bmp de la muerte de pacman
+		clear(pacman);//limpiar los buffer para volver a cargar las nuevas imagenes
+		clear(buffer);
+		dibujar_mapa();
+		
+		blit(muertebmp, pacman, j*33,0,0,0,33,33); //dibujar la muerte
+		draw_sprite(buffer, pacman, posx, posy);
+		
+		pantalla();//imprimir de nuevo todo en pantalla
+		
+		for (int i=0; i<4; i++){ 
+		rest(900000000);//funcion de velocidad del juego
+		}//bucle for para ampliar el tiempo en el juego
+		
+		}
+		//colocar de nuevo a pacman en el inicio
+	posx = 30*14;
+	posy = 30*16;
+	dir = 4;	
+	}
+}
+
+void fantasma(){
+	dibujar_fantasma();//primero se dibuja el fantasma de la funcion anterior
+	muerte_pacman(); //implementar la funcion de la muerte
+	if(mapa[_y/30][_x/30] == '|'){ //para cambiar de direccion y no se atranque
 		fdir = rand()%4;
 	}
-	
+//movimieno automatico del fantasma igual que hice antes el movimiento del personaje	
 	if(fdir == 0){
 		if(mapa[_y/30][(_x-30)/30] != 'X') _x-=30;
 		else fdir = rand()%3;
@@ -117,11 +147,11 @@ void fantasma(){
 	}
 	if(fdir == 2){
 		if(mapa[(_y-30)/30][(_x)/30] != 'X') _y-=30;
-		else fdir = rand()%4;
+		else fdir = rand()%3;
 	}
 	if(fdir == 3){
 		if(mapa[(_y+30)/30][(_x)/30] != 'X') _y+=30;
-		else fdir = rand()%4;
+		else fdir = rand()%3;
 	}
 //rutina de atajo
 		if(_x <= -30) _x = 870;
@@ -142,10 +172,15 @@ int main(){
 	pacbmp = load_bitmap("pacman.bmp", NULL);
 	pacman = create_bitmap(33,33);
 	comida = load_bitmap("Comida.bmp", NULL);
-	enemigo = create_bitmap(33,33);
+	enemigo = create_bitmap(30,30);
 	enemigobmp = load_bitmap("enemigo.bmp", NULL);	
+	muertebmp = load_bitmap("muerte.bmp", NULL);
 
 	while(!key[KEY_ESC] && game_over()){
+//guardar las posiciones relativas del movimiento, estan situadas aqui para que se puedan guardar correctamente
+	anteriorposx = posx;
+	anteriorposy = posy;
+	
 		//rutina para mover a pacman
 		if(key[KEY_RIGHT]) dir = 1;
 		else if(key[KEY_LEFT]) dir = 0;
@@ -183,13 +218,15 @@ int main(){
 		dibujar_personaje();
 		fantasma();
 		pantalla();
-		rest(10);
+		for (int i=0; i<5; i++){ 
+		rest(900000000);//funcion de velocidad del juego
+		}//bucle for para ampliar el tiempo en el juego
 		
 		clear(pacman);
 		blit(pacbmp, pacman, 4*33,0,0,0,33,33);
 		draw_sprite(buffer, pacman, posx, posy);
 		pantalla();
-		rest(10);
+		//rest(900000000);//velocidad de tu personaje
 	}
 }
 END_OF_MAIN();
