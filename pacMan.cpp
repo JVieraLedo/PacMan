@@ -118,7 +118,7 @@ void muerte_pacman(){
 
 	    pantalla();//imprimir de nuevo todo en pantalla
 
-	    for (int i=0; i<4; i++){ 
+	    for (int i=0; i<5; i++){ 
 		rest(900000000);//funcion de velocidad del juego
 	    }//bucle for para ampliar el tiempo en el juego
 
@@ -230,3 +230,4 @@ int main(){
     }
 }
 END_OF_MAIN();
+
